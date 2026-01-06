@@ -19,16 +19,26 @@ body{margin:0;background:#0f172a;overflow:hidden;font-family:Arial}
   <p style="opacity:.7">Camera will follow the store route automatically.</p>
 </div>
 
-<!-- ⭐ NOT modules — use CDN scripts -->
+<!-- ⭐ LOAD LIBRARIES FIRST -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r155/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.155/examples/js/loaders/GLTFLoader.js"></script>
 
+<!-- ⭐ THEN OUR SCRIPT -->
 <script>
+
+// ================== GLOBALS ==================
 let scene,camera,renderer;
 
-init();
+// ⭐ path must be defined BEFORE using it
+const path=[
+  {pos:[6,3,8],look:[0,1,0]},
+  {pos:[2,2,2],look:[0,1,0]},
+  {pos:[-3,2,1],look:[-2,1,0]}
+];
 
+// ================== INIT ==================
 function init(){
+
   scene=new THREE.Scene();
   scene.background=new THREE.Color(0x0f172a);
 
@@ -40,7 +50,7 @@ function init(){
   renderer.shadowMap.enabled=true;
   document.body.appendChild(renderer.domElement);
 
-  // Floor
+  // floor
   const floor=new THREE.Mesh(
     new THREE.PlaneGeometry(20,20),
     new THREE.MeshStandardMaterial({color:0x2f3645,roughness:.7})
@@ -49,14 +59,15 @@ function init(){
   floor.receiveShadow=true;
   scene.add(floor);
 
-  // Ambient + spotlight
-  scene.add(new THREE.AmbientLight(0xffffff,.55));
+  // light
+  scene.add(new THREE.AmbientLight(0xffffff,.6));
+
   const spot=new THREE.SpotLight(0xffffff,1.2);
   spot.position.set(8,10,6);
   spot.castShadow=true;
   scene.add(spot);
 
-  // Test object (ensures something is visible)
+  // visible test cube
   const cube=new THREE.Mesh(
     new THREE.BoxGeometry(2,2,2),
     new THREE.MeshStandardMaterial({color:0xffda1a})
@@ -65,7 +76,7 @@ function init(){
   cube.castShadow=true;
   scene.add(cube);
 
-  // Load a real chair model (safe source)
+  // chair model
   const loader=new THREE.GLTFLoader();
   loader.load(
     "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Chair/glTF/Chair.gltf",
@@ -86,21 +97,15 @@ function init(){
   animate();
 }
 
+// ================== ANIMATE ==================
 function animate(){
   requestAnimationFrame(animate);
   renderer.render(scene,camera);
 }
 
-// Guided camera path
-const path=[
-  {pos:[6,3,8],look:[0,1,0]},
-  {pos:[2,2,2],look:[0,1,0]},
-  {pos:[-3,2,1],look:[-2,1,0]}
-];
-
-// ⭐ EXPOSE globally
+// ================== TOUR ==================
 function startTour(){ move(0); }
-window.startTour = startTour;
+window.startTour = startTour;   // ⭐ make it visible to the button
 
 function move(i){
   if(i>=path.length) return;
@@ -119,6 +124,8 @@ function move(i){
   }
   step();
 }
+
+init();
 </script>
 </body>
 </html>
