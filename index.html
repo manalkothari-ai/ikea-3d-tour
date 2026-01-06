@@ -1,43 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8"/>
-<title>Test 3D</title>
-<style>
-body{margin:0;background:#0f172a;overflow:hidden;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Tour Model</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
 </head>
-
 <body>
 
-<!-- ONLY THIS script -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r155/three.min.js"></script>
-
-<script>
-window.onload = function(){
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
-  camera.position.z = 5;
-
-  const renderer = new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(innerWidth, innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5,1.5,1.5),
-    new THREE.MeshBasicMaterial({color:0xffda1a})
-  );
-  scene.add(cube);
-
-  function animate(){
-    requestAnimationFrame(animate);
-    cube.rotation.y += 0.01;
-    renderer.render(scene,camera);
-  }
-  animate();
-};
-</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.164/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.164/examples/js/controls/OrbitControls.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
