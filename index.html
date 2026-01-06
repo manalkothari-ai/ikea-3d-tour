@@ -49,6 +49,7 @@
     <small>Camera will follow the store route automatically.</small>
   </div>
 
+  <!-- IMPORTANT: only ONE module script, imports use full URLs -->
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.155.0/build/three.module.js';
     import { TextGeometry } from 'https://unpkg.com/three@0.155.0/examples/jsm/geometries/TextGeometry.js';
@@ -67,7 +68,7 @@
 
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0051ba); // IKEA blue
+      scene.background = new THREE.Color(0x0051ba);
 
       camera = new THREE.PerspectiveCamera(
         60,
@@ -124,13 +125,11 @@
       };
 
       const h = 3;
-      // Outer rectangle
       addWall(0, h / 2, -45, 60, h, 1);
       addWall(0, h / 2, 45, 60, h, 1);
       addWall(-30, h / 2, 0, 1, h, 90);
       addWall(30, h / 2, 0, 1, h, 90);
 
-      // Internal partitions (rough match to IKEA map)
       addWall(-15, h / 2, 25, 1, h, 30);
       addWall(10, h / 2, 20, 1, h, 40);
       addWall(-10, h / 2, -10, 1, h, 40);
@@ -241,7 +240,7 @@
       renderer.render(scene, camera);
     }
 
-    // make startTour visible to the button
+    // expose to button
     function startTourInternal() {
       if (!tourPoints.length) return;
       touring = true;
