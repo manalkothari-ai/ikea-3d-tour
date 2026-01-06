@@ -1,131 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<title>IKEA Layout 3D Tour</title>
-
+<meta charset="utf-8"/>
+<title>Test 3D</title>
 <style>
-body{margin:0;background:#0f172a;overflow:hidden;font-family:Arial}
-#ui{position:absolute;top:15px;left:15px;color:white;z-index:5}
-#ui button{padding:10px 16px;border:none;border-radius:10px;background:#0051ba;color:#fff;font-weight:700;cursor:pointer}
+body{margin:0;background:#0f172a;overflow:hidden;}
 </style>
 </head>
 
 <body>
 
-<div id="ui">
-  <h2>IKEA Layout 3D Tour</h2>
-  <button onclick="startTour()">Start Guided Path</button>
-  <p style="opacity:.7">Camera will follow the store route automatically.</p>
-</div>
-
-<!-- ⭐ LOAD LIBRARIES FIRST -->
+<!-- ONLY THIS script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r155/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.155/examples/js/loaders/GLTFLoader.js"></script>
 
-<!-- ⭐ THEN OUR SCRIPT -->
 <script>
+window.onload = function(){
 
-// ================== GLOBALS ==================
-let scene,camera,renderer;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+  camera.position.z = 5;
 
-// ⭐ path must be defined BEFORE using it
-const path=[
-  {pos:[6,3,8],look:[0,1,0]},
-  {pos:[2,2,2],look:[0,1,0]},
-  {pos:[-3,2,1],look:[-2,1,0]}
-];
-
-// ================== INIT ==================
-function init(){
-
-  scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x0f172a);
-
-  camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,2000);
-  camera.position.set(6,3,8);
-
-  renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(innerWidth,innerHeight);
-  renderer.shadowMap.enabled=true;
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(innerWidth, innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // floor
-  const floor=new THREE.Mesh(
-    new THREE.PlaneGeometry(20,20),
-    new THREE.MeshStandardMaterial({color:0x2f3645,roughness:.7})
+  const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5,1.5,1.5),
+    new THREE.MeshBasicMaterial({color:0xffda1a})
   );
-  floor.rotation.x=-Math.PI/2;
-  floor.receiveShadow=true;
-  scene.add(floor);
-
-  // light
-  scene.add(new THREE.AmbientLight(0xffffff,.6));
-
-  const spot=new THREE.SpotLight(0xffffff,1.2);
-  spot.position.set(8,10,6);
-  spot.castShadow=true;
-  scene.add(spot);
-
-  // visible test cube
-  const cube=new THREE.Mesh(
-    new THREE.BoxGeometry(2,2,2),
-    new THREE.MeshStandardMaterial({color:0xffda1a})
-  );
-  cube.position.set(0,1,0);
-  cube.castShadow=true;
   scene.add(cube);
 
-  // chair model
-  const loader=new THREE.GLTFLoader();
-  loader.load(
-    "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Chair/glTF/Chair.gltf",
-    g=>{
-      g.scene.position.set(-2,0,2);
-      g.scene.scale.set(1.6,1.6,1.6);
-      g.scene.traverse(o=>o.castShadow=true);
-      scene.add(g.scene);
-    }
-  );
-
-  window.onresize=()=>{
-    camera.aspect=innerWidth/innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth,innerHeight);
-  };
-
-  animate();
-}
-
-// ================== ANIMATE ==================
-function animate(){
-  requestAnimationFrame(animate);
-  renderer.render(scene,camera);
-}
-
-// ================== TOUR ==================
-function startTour(){ move(0); }
-window.startTour = startTour;   // ⭐ make it visible to the button
-
-function move(i){
-  if(i>=path.length) return;
-
-  const start=camera.position.clone();
-  const end=new THREE.Vector3(...path[i].pos);
-  const t0=performance.now();
-
-  function step(){
-    let t=(performance.now()-t0)/1800;
-    t=Math.min(t,1);
-    camera.position.lerpVectors(start,end,t);
-    camera.lookAt(new THREE.Vector3(...path[i].look));
-    if(t<1) requestAnimationFrame(step);
-    else setTimeout(()=>move(i+1),1200);
+  function animate(){
+    requestAnimationFrame(animate);
+    cube.rotation.y += 0.01;
+    renderer.render(scene,camera);
   }
-  step();
-}
-
-init();
+  animate();
+};
 </script>
+
 </body>
 </html>
