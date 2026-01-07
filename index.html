@@ -139,6 +139,89 @@ floorSections.forEach(section => {
   scene.add(border);
 });
 
+// Main walkway roads throughout the store
+function createRoad(x, z, width, depth) {
+  const roadCanvas = document.createElement('canvas');
+  roadCanvas.width = 512;
+  roadCanvas.height = 512;
+  const roadCtx = roadCanvas.getContext('2d');
+  
+  // Dark gray road
+  roadCtx.fillStyle = '#4a4a4a';
+  roadCtx.fillRect(0, 0, 512, 512);
+  
+  // Yellow center line dashes
+  roadCtx.strokeStyle = '#ffd700';
+  roadCtx.lineWidth = 8;
+  roadCtx.setLineDash([30, 20]);
+  roadCtx.beginPath();
+  roadCtx.moveTo(256, 0);
+  roadCtx.lineTo(256, 512);
+  roadCtx.stroke();
+  
+  // White edge lines
+  roadCtx.strokeStyle = '#ffffff';
+  roadCtx.lineWidth = 6;
+  roadCtx.setLineDash([]);
+  roadCtx.beginPath();
+  roadCtx.moveTo(50, 0);
+  roadCtx.lineTo(50, 512);
+  roadCtx.moveTo(462, 0);
+  roadCtx.lineTo(462, 512);
+  roadCtx.stroke();
+  
+  const roadTexture = new THREE.CanvasTexture(roadCanvas);
+  roadTexture.wrapS = roadTexture.wrapT = THREE.RepeatWrapping;
+  roadTexture.repeat.set(1, depth / width);
+  
+  const road = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, depth),
+    new THREE.MeshStandardMaterial({map: roadTexture, roughness: 0.8})
+  );
+  road.rotation.x = -Math.PI/2;
+  road.position.set(x, 0.08, z);
+  road.receiveShadow = true;
+  scene.add(road);
+}
+
+// Create main walkway paths
+// Pedestrian crossing markings
+function createCrossing(x, z, width) {
+  const crossingCanvas = document.createElement('canvas');
+  crossingCanvas.width = 512;
+  crossingCanvas.height = 128;
+  const ctx = crossingCanvas.getContext('2d');
+  
+  ctx.fillStyle = '#4a4a4a';
+  ctx.fillRect(0, 0, 512, 128);
+  
+  // White stripes
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 8; i++) {
+    ctx.fillRect(i * 64, 0, 50, 128);
+  }
+  
+  const crossingTexture = new THREE.CanvasTexture(crossingCanvas);
+  const crossing = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, 2),
+    new THREE.MeshStandardMaterial({map: crossingTexture, roughness: 0.8})
+  );
+  crossing.rotation.x = -Math.PI/2;
+  crossing.position.set(x, 0.09, z);
+  scene.add(crossing);
+}
+
+createCrossing(0, 35, 4);
+createCrossing(-10, 15, 3);
+createCrossing(15, 25, 3);
+
+// Create main walkway paths after defining the function
+createRoad(0, 20, 4, 80); // Main central corridor
+createRoad(-20, 0, 3, 30); // Living room corridor
+createRoad(20, 15, 3, 35); // Bedroom/Office corridor
+createRoad(0, 48, 5, 20); // Marketplace corridor
+createRoad(35, 45, 3, 15); // Warehouse corridor
+
 let clickables=[];
 
 function wall(w,h,d,x,y,z,col){
@@ -154,6 +237,187 @@ wall(120,12,1,0,6,-60,'#e8e8e8');
 wall(120,12,1,0,6,60,'#e8e8e8');
 wall(1,12,120,-60,6,0,'#e8e8e8');
 wall(1,12,120,60,6,0,'#e8e8e8');
+
+// Complete Roof Structure
+function createRoof() {
+  // Main flat roof sections
+  const roofSections = [
+    {x: 0, z: 0, w: 120, d: 120}
+  ];
+  
+  roofSections.forEach(section => {
+    // Roof surface with texture
+    const roofCanvas = document.createElement('canvas');
+    roofCanvas.width = 512;
+    roofCanvas.height = 512;
+    const roofCtx = roofCanvas.getContext('2d');
+    
+    // Metal roof texture
+    roofCtx.fillStyle = '#708090';
+    roofCtx.fillRect(0, 0, 512, 512);
+    
+    // Corrugated lines
+    for (let i = 0; i < 512; i += 8) {
+      roofCtx.strokeStyle = i % 16 === 0 ? '#556677' : '#889099';
+      roofCtx.lineWidth = 2;
+      roofCtx.beginPath();
+      roofCtx.moveTo(i, 0);
+      roofCtx.lineTo(i, 512);
+      roofCtx.stroke();
+    }
+    
+    // Weathering spots
+    for (let i = 0; i < 30; i++) {
+      roofCtx.fillStyle = `rgba(100,100,100,${Math.random() * 0.2})`;
+      roofCtx.beginPath();
+      roofCtx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 20 + 5, 0, Math.PI * 2);
+      roofCtx.fill();
+    }
+    
+    const roofTexture = new THREE.CanvasTexture(roofCanvas);
+    roofTexture.wrapS = roofTexture.wrapT = THREE.RepeatWrapping;
+    roofTexture.repeat.set(10, 10);
+    
+    const roof = new THREE.Mesh(
+      new THREE.PlaneGeometry(section.w, section.d),
+      new THREE.MeshStandardMaterial({
+        map: roofTexture,
+        roughness: 0.7,
+        metalness: 0.3
+      })
+    );
+    roof.rotation.x = -Math.PI/2;
+    roof.position.set(section.x, 12, section.z);
+    roof.receiveShadow = true;
+    roof.castShadow = true;
+    scene.add(roof);
+    
+    // Roof edge trim
+    const trimColor = '#4a5568';
+    
+    // Front trim
+    const frontTrim = new THREE.Mesh(
+      new THREE.BoxGeometry(section.w, 0.3, 0.5),
+      new THREE.MeshStandardMaterial({color: trimColor})
+    );
+    frontTrim.position.set(section.x, 12.15, section.z + section.d/2);
+    frontTrim.castShadow = true;
+    scene.add(frontTrim);
+    
+    // Back trim
+    const backTrim = new THREE.Mesh(
+      new THREE.BoxGeometry(section.w, 0.3, 0.5),
+      new THREE.MeshStandardMaterial({color: trimColor})
+    );
+    backTrim.position.set(section.x, 12.15, section.z - section.d/2);
+    backTrim.castShadow = true;
+    scene.add(backTrim);
+    
+    // Left trim
+    const leftTrim = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.3, section.d),
+      new THREE.MeshStandardMaterial({color: trimColor})
+    );
+    leftTrim.position.set(section.x - section.w/2, 12.15, section.z);
+    leftTrim.castShadow = true;
+    scene.add(leftTrim);
+    
+    // Right trim
+    const rightTrim = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.3, section.d),
+      new THREE.MeshStandardMaterial({color: trimColor})
+    );
+    rightTrim.position.set(section.x + section.w/2, 12.15, section.z);
+    rightTrim.castShadow = true;
+    scene.add(rightTrim);
+  });
+  
+  // Skylights for natural lighting
+  const skylightPositions = [
+    {x: -30, z: 0},
+    {x: 25, z: 5},
+    {x: 0, z: 25},
+    {x: 0, z: 48}
+  ];
+  
+  skylightPositions.forEach(pos => {
+    const skylight = new THREE.Mesh(
+      new THREE.BoxGeometry(6, 0.2, 4),
+      new THREE.MeshStandardMaterial({
+        color: '#87ceeb',
+        transparent: true,
+        opacity: 0.4,
+        emissive: '#ffffff',
+        emissiveIntensity: 0.3
+      })
+    );
+    skylight.position.set(pos.x, 11.9, pos.z);
+    scene.add(skylight);
+    
+    // Skylight frame
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(6.2, 0.15, 4.2),
+      new THREE.MeshStandardMaterial({color: '#2c3e50'})
+    );
+    frame.position.set(pos.x, 11.85, pos.z);
+    scene.add(frame);
+    
+    // Add light from skylight
+    const skylightLight = new THREE.PointLight(0xffffee, 0.5, 15);
+    skylightLight.position.set(pos.x, 11, pos.z);
+    scene.add(skylightLight);
+  });
+  
+  // Roof ventilation units
+  const ventPositions = [
+    {x: -40, z: -20},
+    {x: 40, z: -20},
+    {x: -40, z: 40},
+    {x: 40, z: 40}
+  ];
+  
+  ventPositions.forEach(pos => {
+    const vent = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.8, 0.8, 1, 16),
+      new THREE.MeshStandardMaterial({color: '#6b7280'})
+    );
+    vent.position.set(pos.x, 12.5, pos.z);
+    vent.castShadow = true;
+    scene.add(vent);
+    
+    // Vent cap
+    const cap = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 0.8, 0.3, 16),
+      new THREE.MeshStandardMaterial({color: '#4b5563'})
+    );
+    cap.position.set(pos.x, 13.1, pos.z);
+    cap.castShadow = true;
+    scene.add(cap);
+  });
+  
+  // IKEA logo on roof (visible from above)
+  const roofLogoCanvas = document.createElement('canvas');
+  roofLogoCanvas.width = 1024;
+  roofLogoCanvas.height = 512;
+  const logoCtx = roofLogoCanvas.getContext('2d');
+  logoCtx.fillStyle = '#0058a3';
+  logoCtx.fillRect(0, 0, 1024, 512);
+  logoCtx.fillStyle = '#ffda1a';
+  logoCtx.font = 'bold 300px Arial';
+  logoCtx.textAlign = 'center';
+  logoCtx.fillText('IKEA', 512, 370);
+  
+  const roofLogoTexture = new THREE.CanvasTexture(roofLogoCanvas);
+  const roofLogo = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 20),
+    new THREE.MeshStandardMaterial({map: roofLogoTexture})
+  );
+  roofLogo.rotation.x = -Math.PI/2;
+  roofLogo.position.set(0, 12.05, 0);
+  scene.add(roofLogo);
+}
+
+createRoof();
 
 // Interior Section Dividers
 // Living Room section wall
@@ -275,7 +539,7 @@ function createShed(x, y, z, width, height, depth, roofColor, wallColor, name, d
   // Door handle
   const handle = new THREE.Mesh(
     new THREE.SphereGeometry(0.1, 8, 8),
-    new THREE.MeshStandardMaterial({color: '#silver'})
+    new THREE.MeshStandardMaterial({color: '#c0c0c0'})
   );
   handle.position.set(x + width * 0.12, y + wallHeight * 0.35, z + depth/2 + 0.2);
   scene.add(handle);
@@ -412,22 +676,40 @@ scene.add(logoMesh);
 // Welcome Sign
 const welcomeCanvas=document.createElement('canvas');
 welcomeCanvas.width=1024;
-welcomeCanvas.height=256;
+welcomeCanvas.height=512;
 const welCtx=welcomeCanvas.getContext('2d');
 welCtx.fillStyle='#ffffff';
-welCtx.fillRect(0,0,1024,256);
+welCtx.fillRect(0,0,1024,512);
+
+// Border
+welCtx.strokeStyle='#0058a3';
+welCtx.lineWidth=10;
+welCtx.strokeRect(10,10,1004,492);
+
+// Welcome text
 welCtx.fillStyle='#0058a3';
-welCtx.font='bold 80px Arial';
+welCtx.font='bold 120px Arial';
 welCtx.textAlign='center';
-welCtx.fillText('WELCOME',512,100);
-welCtx.font='50px Arial';
-welCtx.fillText('Store Hours: 10:00 AM - 9:00 PM',512,170);
+welCtx.fillText('WELCOME',512,160);
+
+// Subtitle
+welCtx.font='60px Arial';
+welCtx.fillText('to IKEA Store',512,240);
+
+// Store hours
+welCtx.fillStyle='#333';
+welCtx.font='bold 50px Arial';
+welCtx.fillText('STORE HOURS',512,330);
+welCtx.font='45px Arial';
+welCtx.fillText('Monday - Saturday: 10:00 AM - 9:00 PM',512,390);
+welCtx.fillText('Sunday: 11:00 AM - 7:00 PM',512,450);
+
 const welcomeTexture=new THREE.CanvasTexture(welcomeCanvas);
 const welcomeMesh=new THREE.Mesh(
-  new THREE.PlaneGeometry(12,3),
+  new THREE.PlaneGeometry(16,8),
   new THREE.MeshStandardMaterial({map:welcomeTexture})
 );
-welcomeMesh.position.set(-8,3,35.5);
+welcomeMesh.position.set(0,5,33);
 scene.add(welcomeMesh);
 
 // Add texture to walls (wood panel effect for showroom)
@@ -829,44 +1111,86 @@ clickables.push(entSign);
 // Entry/Exit Signs
 const entryCanvas=document.createElement('canvas');
 entryCanvas.width=512;
-entryCanvas.height=256;
+entryCanvas.height=512;
 const entryCtx=entryCanvas.getContext('2d');
 entryCtx.fillStyle='#0058a3';
-entryCtx.fillRect(0,0,512,256);
+entryCtx.fillRect(0,0,512,512);
+
+// White border
+entryCtx.strokeStyle='#ffffff';
+entryCtx.lineWidth=15;
+entryCtx.strokeRect(15,15,482,482);
+
 entryCtx.fillStyle='#ffffff';
-entryCtx.font='bold 80px Arial';
+entryCtx.font='bold 100px Arial';
 entryCtx.textAlign='center';
-entryCtx.fillText('ENTRANCE',256,100);
+entryCtx.fillText('ENTRANCE',256,200);
+
+// Large arrow
+entryCtx.font='120px Arial';
+entryCtx.fillText('↓',256,350);
+
+// Additional text
 entryCtx.font='40px Arial';
-entryCtx.fillText('→',256,170);
+entryCtx.fillText('Welcome!',256,430);
+
 const entryTexture=new THREE.CanvasTexture(entryCanvas);
 const entrySign=new THREE.Mesh(
-  new THREE.PlaneGeometry(6,3),
+  new THREE.PlaneGeometry(8,8),
   new THREE.MeshStandardMaterial({map:entryTexture})
 );
-entrySign.position.set(-10,4,36);
+entrySign.position.set(-15,5,32);
 scene.add(entrySign);
+
+// Duplicate on right side
+const entrySign2=new THREE.Mesh(
+  new THREE.PlaneGeometry(8,8),
+  new THREE.MeshStandardMaterial({map:entryTexture})
+);
+entrySign2.position.set(15,5,32);
+scene.add(entrySign2);
 
 const exitCanvas=document.createElement('canvas');
 exitCanvas.width=512;
-exitCanvas.height=256;
+exitCanvas.height=512;
 const exitCtx=exitCanvas.getContext('2d');
 exitCtx.fillStyle='#d32f2f';
-exitCtx.fillRect(0,0,512,256);
+exitCtx.fillRect(0,0,512,512);
+
+// White border
+exitCtx.strokeStyle='#ffffff';
+exitCtx.lineWidth=15;
+exitCtx.strokeRect(15,15,482,482);
+
 exitCtx.fillStyle='#ffffff';
-exitCtx.font='bold 80px Arial';
+exitCtx.font='bold 120px Arial';
 exitCtx.textAlign='center';
-exitCtx.fillText('EXIT',256,100);
+exitCtx.fillText('EXIT',256,200);
+
+// Large arrow
+exitCtx.font='120px Arial';
+exitCtx.fillText('↑',256,350);
+
+// Additional text
 exitCtx.font='40px Arial';
-exitCtx.fillText('←',256,170);
+exitCtx.fillText('Thank You!',256,430);
+
 const exitTexture=new THREE.CanvasTexture(exitCanvas);
 const exitSign=new THREE.Mesh(
-  new THREE.PlaneGeometry(6,3),
+  new THREE.PlaneGeometry(8,8),
   new THREE.MeshStandardMaterial({map:exitTexture})
 );
-exitSign.position.set(10,4,58);
+exitSign.position.set(-12,5,58);
 exitSign.rotation.y=Math.PI;
 scene.add(exitSign);
+
+const exitSign2=new THREE.Mesh(
+  new THREE.PlaneGeometry(8,8),
+  new THREE.MeshStandardMaterial({map:exitTexture})
+);
+exitSign2.position.set(12,5,58);
+exitSign2.rotation.y=Math.PI;
+scene.add(exitSign2);
 
 product(-8,0.5,38,3,1,2,'#8b4513','Reception Desk','Customer service & information','desk');
 
@@ -944,15 +1268,344 @@ const checkSign=wall(8,1.5,0.2,0,4,50,'#3498db');
 checkSign.userData={name:'Checkout',desc:'Multiple lanes. Self-checkout available. Avg transaction: 3-4 min. Family card benefits.'};
 clickables.push(checkSign);
 
-// Hotspots (yellow spheres)
+// Hotspots (realistic human figures)
 function hotspot(x,y,z,name,info){
-  const m=new THREE.Mesh(new THREE.SphereGeometry(0.4,16,16),new THREE.MeshStandardMaterial({color:'#ffda1a',emissive:'#ffda1a',emissiveIntensity:0.6}));
-  m.position.set(x,y,z);
-  m.userData={name,desc:info};
-  scene.add(m);
-  clickables.push(m);
-  let s=1,d=1;
-  setInterval(()=>{s+=d*0.015;if(s>1.25)d=-1;if(s<1)d=1;m.scale.setScalar(s);},40);
+  // Create a realistic human figure
+  const humanGroup = new THREE.Group();
+  
+  // Head with more detail
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 32, 32),
+    new THREE.MeshStandardMaterial({
+      color: '#ffdbac',
+      roughness: 0.8,
+      metalness: 0.1
+    })
+  );
+  head.position.set(0, 1.65, 0);
+  head.scale.set(1, 1.1, 0.9);
+  head.castShadow = true;
+  humanGroup.add(head);
+  
+  // Hair
+  const hair = new THREE.Mesh(
+    new THREE.SphereGeometry(0.26, 32, 32),
+    new THREE.MeshStandardMaterial({color: '#3d2817', roughness: 0.9})
+  );
+  hair.position.set(0, 1.75, -0.05);
+  hair.scale.set(1, 0.8, 1);
+  hair.castShadow = true;
+  humanGroup.add(hair);
+  
+  // Eyes
+  const leftEye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#2c1810'})
+  );
+  leftEye.position.set(-0.08, 1.7, 0.22);
+  humanGroup.add(leftEye);
+  
+  const rightEye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#2c1810'})
+  );
+  rightEye.position.set(0.08, 1.7, 0.22);
+  humanGroup.add(rightEye);
+  
+  // Nose
+  const nose = new THREE.Mesh(
+    new THREE.SphereGeometry(0.03, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#ffc9a0'})
+  );
+  nose.position.set(0, 1.62, 0.25);
+  nose.scale.set(0.8, 1, 1.2);
+  humanGroup.add(nose);
+  
+  // Neck
+  const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.13, 0.15, 16),
+    new THREE.MeshStandardMaterial({color: '#ffdbac', roughness: 0.8})
+  );
+  neck.position.set(0, 1.48, 0);
+  neck.castShadow = true;
+  humanGroup.add(neck);
+  
+  // Torso (more realistic shape)
+  const torsoShape = new THREE.Shape();
+  torsoShape.moveTo(-0.3, 0);
+  torsoShape.lineTo(-0.35, -0.3);
+  torsoShape.lineTo(-0.3, -0.6);
+  torsoShape.lineTo(0.3, -0.6);
+  torsoShape.lineTo(0.35, -0.3);
+  torsoShape.lineTo(0.3, 0);
+  torsoShape.lineTo(-0.3, 0);
+  
+  const extrudeSettings = {
+    steps: 1,
+    depth: 0.25,
+    bevelEnabled: true,
+    bevelThickness: 0.05,
+    bevelSize: 0.05,
+    bevelSegments: 8
+  };
+  
+  const torsoGeometry = new THREE.ExtrudeGeometry(torsoShape, extrudeSettings);
+  const torso = new THREE.Mesh(
+    torsoGeometry,
+    new THREE.MeshStandardMaterial({color: '#0058a3', roughness: 0.7})
+  );
+  torso.position.set(0, 1.4, -0.125);
+  torso.castShadow = true;
+  humanGroup.add(torso);
+  
+  // Shirt collar
+  const collar = new THREE.Mesh(
+    new THREE.TorusGeometry(0.15, 0.03, 16, 32, Math.PI),
+    new THREE.MeshStandardMaterial({color: '#004080'})
+  );
+  collar.position.set(0, 1.4, 0.05);
+  collar.rotation.x = Math.PI / 2;
+  humanGroup.add(collar);
+  
+  // Left shoulder and arm (more anatomical)
+  const leftShoulder = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#0058a3', roughness: 0.7})
+  );
+  leftShoulder.position.set(-0.4, 1.3, 0);
+  leftShoulder.castShadow = true;
+  humanGroup.add(leftShoulder);
+  
+  const leftUpperArm = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.09, 0.08, 0.45, 16),
+    new THREE.MeshStandardMaterial({color: '#0058a3', roughness: 0.7})
+  );
+  leftUpperArm.position.set(-0.48, 1.0, 0);
+  leftUpperArm.rotation.z = 0.2;
+  leftUpperArm.castShadow = true;
+  humanGroup.add(leftUpperArm);
+  
+  const leftForearm = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.06, 0.4, 16),
+    new THREE.MeshStandardMaterial({color: '#ffdbac', roughness: 0.8})
+  );
+  leftForearm.position.set(-0.62, 0.65, 0);
+  leftForearm.rotation.z = 0.3;
+  leftForearm.castShadow = true;
+  humanGroup.add(leftForearm);
+  
+  const leftHand = new THREE.Mesh(
+    new THREE.SphereGeometry(0.08, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#ffdbac', roughness: 0.8})
+  );
+  leftHand.position.set(-0.72, 0.42, 0);
+  leftHand.scale.set(1, 1.2, 0.7);
+  leftHand.castShadow = true;
+  humanGroup.add(leftHand);
+  
+  // Right shoulder and arm
+  const rightShoulder = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#0058a3', roughness: 0.7})
+  );
+  rightShoulder.position.set(0.4, 1.3, 0);
+  rightShoulder.castShadow = true;
+  humanGroup.add(rightShoulder);
+  
+  const rightUpperArm = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.09, 0.08, 0.45, 16),
+    new THREE.MeshStandardMaterial({color: '#0058a3', roughness: 0.7})
+  );
+  rightUpperArm.position.set(0.48, 1.0, 0);
+  rightUpperArm.rotation.z = -0.2;
+  rightUpperArm.castShadow = true;
+  humanGroup.add(rightUpperArm);
+  
+  const rightForearm = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.06, 0.4, 16),
+    new THREE.MeshStandardMaterial({color: '#ffdbac', roughness: 0.8})
+  );
+  rightForearm.position.set(0.62, 0.65, 0);
+  rightForearm.rotation.z = -0.3;
+  rightForearm.castShadow = true;
+  humanGroup.add(rightForearm);
+  
+  const rightHand = new THREE.Mesh(
+    new THREE.SphereGeometry(0.08, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#ffdbac', roughness: 0.8})
+  );
+  rightHand.position.set(0.72, 0.42, 0);
+  rightHand.scale.set(1, 1.2, 0.7);
+  rightHand.castShadow = true;
+  humanGroup.add(rightHand);
+  
+  // Waist/Belt
+  const belt = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.32, 0.33, 0.08, 32),
+    new THREE.MeshStandardMaterial({color: '#1a1a1a', roughness: 0.5, metalness: 0.3})
+  );
+  belt.position.set(0, 0.8, 0);
+  humanGroup.add(belt);
+  
+  // Left leg (more realistic proportions)
+  const leftHip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#2c3e50', roughness: 0.8})
+  );
+  leftHip.position.set(-0.12, 0.75, 0);
+  leftHip.castShadow = true;
+  humanGroup.add(leftHip);
+  
+  const leftThigh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.11, 0.09, 0.5, 16),
+    new THREE.MeshStandardMaterial({color: '#2c3e50', roughness: 0.8})
+  );
+  leftThigh.position.set(-0.12, 0.45, 0);
+  leftThigh.castShadow = true;
+  humanGroup.add(leftThigh);
+  
+  const leftKnee = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#2c3e50', roughness: 0.8})
+  );
+  leftKnee.position.set(-0.12, 0.2, 0);
+  humanGroup.add(leftKnee);
+  
+  const leftShin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.07, 0.45, 16),
+    new THREE.MeshStandardMaterial({color: '#2c3e50', roughness: 0.8})
+  );
+  leftShin.position.set(-0.13, 0.02, 0.02);
+  leftShin.rotation.x = -0.1;
+  leftShin.castShadow = true;
+  humanGroup.add(leftShin);
+  
+  const leftFoot = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 0.08, 0.25),
+    new THREE.MeshStandardMaterial({color: '#1a1a1a', roughness: 0.7})
+  );
+  leftFoot.position.set(-0.13, -0.18, 0.1);
+  leftFoot.castShadow = true;
+  humanGroup.add(leftFoot);
+  
+  // Right leg
+  const rightHip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#2c3e50', roughness: 0.8})
+  );
+  rightHip.position.set(0.12, 0.75, 0);
+  rightHip.castShadow = true;
+  humanGroup.add(rightHip);
+  
+  const rightThigh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.11, 0.09, 0.5, 16),
+    new THREE.MeshStandardMaterial({color: '#2c3e50', roughness: 0.8})
+  );
+  rightThigh.position.set(0.12, 0.45, 0);
+  rightThigh.castShadow = true;
+  humanGroup.add(rightThigh);
+  
+  const rightKnee = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 16, 16),
+    new THREE.MeshStandardMaterial({color: '#2c3e50', roughness: 0.8})
+  );
+  rightKnee.position.set(0.12, 0.2, 0);
+  humanGroup.add(rightKnee);
+  
+  const rightShin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.07, 0.45, 16),
+    new THREE.MeshStandardMaterial({color: '#2c3e50', roughness: 0.8})
+  );
+  rightShin.position.set(0.13, 0.02, 0.02);
+  rightShin.rotation.x = -0.1;
+  rightShin.castShadow = true;
+  humanGroup.add(rightShin);
+  
+  const rightFoot = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 0.08, 0.25),
+    new THREE.MeshStandardMaterial({color: '#1a1a1a', roughness: 0.7})
+  );
+  rightFoot.position.set(0.13, -0.18, 0.1);
+  rightFoot.castShadow = true;
+  humanGroup.add(rightFoot);
+  
+  // IKEA employee badge (more detailed)
+  const badgeBack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.25, 0.02),
+    new THREE.MeshStandardMaterial({color: '#ffda1a', roughness: 0.4, metalness: 0.2})
+  );
+  badgeBack.position.set(0.22, 1.15, 0.13);
+  humanGroup.add(badgeBack);
+  
+  const badgeClip = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 0.05, 8),
+    new THREE.MeshStandardMaterial({color: '#c0c0c0', metalness: 0.8})
+  );
+  badgeClip.position.set(0.22, 1.27, 0.13);
+  badgeClip.rotation.x = Math.PI / 2;
+  humanGroup.add(badgeClip);
+  
+  // Position the human
+  humanGroup.position.set(x, y, z);
+  scene.add(humanGroup);
+  
+  // Add label above human
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 512;
+  labelCanvas.height = 128;
+  const labelCtx = labelCanvas.getContext('2d');
+  labelCtx.fillStyle = '#0058a3';
+  labelCtx.fillRect(0, 0, 512, 128);
+  labelCtx.fillStyle = '#ffda1a';
+  labelCtx.font = 'bold 60px Arial';
+  labelCtx.textAlign = 'center';
+  labelCtx.fillText('ℹ️ INFO', 256, 85);
+  
+  const labelTexture = new THREE.CanvasTexture(labelCanvas);
+  const label = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 0.5),
+    new THREE.MeshStandardMaterial({map: labelTexture, transparent: true})
+  );
+  label.position.set(x, y + 2.2, z);
+  scene.add(label);
+  
+  // Make label always face camera
+  function updateLabel() {
+    label.lookAt(camera.position);
+  }
+  
+  // Clickable invisible box around human
+  const infoBox = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5, 2.2, 1),
+    new THREE.MeshBasicMaterial({visible: false})
+  );
+  infoBox.position.set(x, y + 1, z);
+  infoBox.userData = {name: name, desc: info};
+  scene.add(infoBox);
+  clickables.push(infoBox);
+  
+  // Subtle breathing animation
+  let breathTime = Math.random() * Math.PI * 2;
+  let armTime = Math.random() * Math.PI * 2;
+  
+  setInterval(() => {
+    breathTime += 0.03;
+    armTime += 0.02;
+    
+    // Breathing effect on torso
+    torso.scale.z = 1 + Math.sin(breathTime) * 0.02;
+    
+    // Slight arm movement
+    leftUpperArm.rotation.z = 0.2 + Math.sin(armTime) * 0.05;
+    rightUpperArm.rotation.z = -0.2 - Math.sin(armTime) * 0.05;
+    
+    // Head slight movement
+    head.rotation.y = Math.sin(armTime * 0.5) * 0.1;
+    
+    updateLabel();
+  }, 50);
+  
+  return humanGroup;
 }
 
 hotspot(0,2,38,'Entry Point','Main entrance. Store maps provided. Peak: 11am-2pm, 5pm-7pm.');
