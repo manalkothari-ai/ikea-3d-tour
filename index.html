@@ -100,13 +100,44 @@ const texture=new THREE.CanvasTexture(canvas);
 texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
 texture.repeat.set(20,20);
 
-const floor=new THREE.Mesh(
-  new THREE.PlaneGeometry(120,120),
-  new THREE.MeshStandardMaterial({map:texture,roughness:0.9})
-);
-floor.rotation.x=-Math.PI/2;
-floor.receiveShadow=true;
-scene.add(floor);
+// Floor sections with different colors
+const floorSections = [
+  // Entrance (blue)
+  {x: 0, z: 45, w: 40, d: 15, color: '#b3d9ff'},
+  // Living Room (warm brown)
+  {x: -30, z: 0, w: 30, d: 30, color: '#e6ccb3'},
+  // Bedroom (soft beige)
+  {x: 25, z: 5, w: 25, d: 25, color: '#f5e6d3'},
+  // Kitchen (light gray)
+  {x: -25, z: 25, w: 20, d: 20, color: '#e8e8e8'},
+  // Office (cool gray)
+  {x: 20, z: 25, w: 25, d: 20, color: '#d4d4d4'},
+  // Marketplace (white)
+  {x: 0, z: 45, w: 40, d: 10, color: '#ffffff'},
+  // Warehouse (wood brown)
+  {x: 45, z: 47, w: 15, d: 13, color: '#c4a57b'},
+  // Checkout (blue)
+  {x: 0, z: 54, w: 30, d: 6, color: '#b3d9ff'}
+];
+
+floorSections.forEach(section => {
+  const sectionFloor = new THREE.Mesh(
+    new THREE.PlaneGeometry(section.w, section.d),
+    new THREE.MeshStandardMaterial({color: section.color, roughness: 0.9})
+  );
+  sectionFloor.rotation.x = -Math.PI/2;
+  sectionFloor.position.set(section.x, 0.05, section.z);
+  sectionFloor.receiveShadow = true;
+  scene.add(sectionFloor);
+  
+  // Add border to each section
+  const borderGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(section.w, section.d));
+  const borderMat = new THREE.LineBasicMaterial({color: '#888', linewidth: 2});
+  const border = new THREE.LineSegments(borderGeo, borderMat);
+  border.rotation.x = -Math.PI/2;
+  border.position.set(section.x, 0.06, section.z);
+  scene.add(border);
+});
 
 let clickables=[];
 
@@ -118,13 +149,239 @@ function wall(w,h,d,x,y,z,col){
   return m;
 }
 
-// Walls
+// Outer Walls
 wall(120,12,1,0,6,-60,'#e8e8e8');
 wall(120,12,1,0,6,60,'#e8e8e8');
 wall(1,12,120,-60,6,0,'#e8e8e8');
 wall(1,12,120,60,6,0,'#e8e8e8');
 
-// IKEA branding
+// Interior Section Dividers
+// Living Room section wall
+wall(30,8,0.5,-30,4,10,'#d4a373');
+wall(20,8,0.5,-15,4,-10,'#d4a373');
+
+// Bedroom section wall
+wall(25,8,0.5,25,4,15,'#d4a373');
+wall(15,8,0.5,35,4,5,'#d4a373');
+
+// Kitchen section wall
+wall(20,8,0.5,-25,4,35,'#d4a373');
+
+// Office section wall
+wall(25,8,0.5,30,4,35,'#d4a373');
+
+// Marketplace entrance walls
+wall(0.5,6,15,-20,3,47,'#fff');
+wall(0.5,6,15,20,3,47,'#fff');
+
+// Warehouse section walls
+wall(25,8,0.5,35,4,35,'#8b7355');
+wall(0.5,8,20,48,4,48,'#8b7355');
+
+// Section name blocks above walls
+function sectionLabel(text, x, y, z, bgColor) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, 1024, 256);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 90px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(text, 512, 150);
+  const texture = new THREE.CanvasTexture(canvas);
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 2.5),
+    new THREE.MeshStandardMaterial({map: texture})
+  );
+  mesh.position.set(x, y, z);
+  scene.add(mesh);
+  return mesh;
+}
+
+sectionLabel('LIVING ROOM', -30, 9, 10, '#d4a373');
+sectionLabel('BEDROOM', 25, 9, 15, '#d4a373');
+sectionLabel('KITCHEN', -25, 9, 35, '#d4a373');
+sectionLabel('OFFICE', 30, 9, 35, '#d4a373');
+sectionLabel('MARKETPLACE', 0, 7, 47, '#0058a3');
+sectionLabel('WAREHOUSE', 35, 9, 35, '#8b7355');
+
+// Garden Shed/Storage Shed display area
+const shedAreaX = -45;
+const shedAreaZ = 30;
+
+// Create outdoor shed section label
+sectionLabel('OUTDOOR SHEDS', shedAreaX, 9, shedAreaZ - 10, '#6b8e23');
+
+// Shed floor section
+const shedFloor = new THREE.Mesh(
+  new THREE.PlaneGeometry(20, 25),
+  new THREE.MeshStandardMaterial({color: '#9dc183', roughness: 0.9})
+);
+shedFloor.rotation.x = -Math.PI/2;
+shedFloor.position.set(shedAreaX, 0.05, shedAreaZ);
+shedFloor.receiveShadow = true;
+scene.add(shedFloor);
+
+// Create a detailed garden shed
+function createShed(x, y, z, width, height, depth, roofColor, wallColor, name, desc) {
+  // Shed base/floor
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(width, 0.2, depth),
+    new THREE.MeshStandardMaterial({color: '#8b7355'})
+  );
+  base.position.set(x, y, z);
+  base.castShadow = base.receiveShadow = true;
+  scene.add(base);
+  
+  // Shed walls
+  const wallHeight = height * 0.6;
+  
+  // Front wall with door
+  const frontLeft = new THREE.Mesh(
+    new THREE.BoxGeometry(width * 0.3, wallHeight, 0.2),
+    new THREE.MeshStandardMaterial({color: wallColor})
+  );
+  frontLeft.position.set(x - width * 0.35, y + wallHeight/2, z + depth/2);
+  frontLeft.castShadow = true;
+  scene.add(frontLeft);
+  
+  const frontRight = new THREE.Mesh(
+    new THREE.BoxGeometry(width * 0.3, wallHeight, 0.2),
+    new THREE.MeshStandardMaterial({color: wallColor})
+  );
+  frontRight.position.set(x + width * 0.35, y + wallHeight/2, z + depth/2);
+  frontRight.castShadow = true;
+  scene.add(frontRight);
+  
+  const frontTop = new THREE.Mesh(
+    new THREE.BoxGeometry(width * 0.4, wallHeight * 0.3, 0.2),
+    new THREE.MeshStandardMaterial({color: wallColor})
+  );
+  frontTop.position.set(x, y + wallHeight * 0.85, z + depth/2);
+  frontTop.castShadow = true;
+  scene.add(frontTop);
+  
+  // Door
+  const door = new THREE.Mesh(
+    new THREE.BoxGeometry(width * 0.35, wallHeight * 0.7, 0.15),
+    new THREE.MeshStandardMaterial({color: '#654321'})
+  );
+  door.position.set(x, y + wallHeight * 0.35, z + depth/2 + 0.1);
+  door.castShadow = true;
+  scene.add(door);
+  
+  // Door handle
+  const handle = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 8, 8),
+    new THREE.MeshStandardMaterial({color: '#silver'})
+  );
+  handle.position.set(x + width * 0.12, y + wallHeight * 0.35, z + depth/2 + 0.2);
+  scene.add(handle);
+  
+  // Back wall
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(width, wallHeight, 0.2),
+    new THREE.MeshStandardMaterial({color: wallColor})
+  );
+  back.position.set(x, y + wallHeight/2, z - depth/2);
+  back.castShadow = true;
+  scene.add(back);
+  
+  // Side walls with window
+  const leftWall = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, wallHeight, depth),
+    new THREE.MeshStandardMaterial({color: wallColor})
+  );
+  leftWall.position.set(x - width/2, y + wallHeight/2, z);
+  leftWall.castShadow = true;
+  scene.add(leftWall);
+  
+  const rightWall = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, wallHeight, depth),
+    new THREE.MeshStandardMaterial({color: wallColor})
+  );
+  rightWall.position.set(x + width/2, y + wallHeight/2, z);
+  rightWall.castShadow = true;
+  scene.add(rightWall);
+  
+  // Window on side
+  const window = new THREE.Mesh(
+    new THREE.BoxGeometry(0.25, wallHeight * 0.3, depth * 0.3),
+    new THREE.MeshStandardMaterial({color: '#87ceeb', transparent: true, opacity: 0.6})
+  );
+  window.position.set(x + width/2, y + wallHeight * 0.6, z);
+  scene.add(window);
+  
+  // Pitched roof
+  const roofGeo = new THREE.BufferGeometry();
+  const roofVertices = new Float32Array([
+    // Front triangle
+    -width/2, wallHeight, depth/2,
+    width/2, wallHeight, depth/2,
+    0, height, depth/2,
+    // Back triangle
+    -width/2, wallHeight, -depth/2,
+    width/2, wallHeight, -depth/2,
+    0, height, -depth/2,
+    // Left slope
+    -width/2, wallHeight, depth/2,
+    0, height, depth/2,
+    0, height, -depth/2,
+    -width/2, wallHeight, depth/2,
+    0, height, -depth/2,
+    -width/2, wallHeight, -depth/2,
+    // Right slope
+    width/2, wallHeight, depth/2,
+    0, height, depth/2,
+    0, height, -depth/2,
+    width/2, wallHeight, depth/2,
+    0, height, -depth/2,
+    width/2, wallHeight, -depth/2
+  ]);
+  roofGeo.setAttribute('position', new THREE.BufferAttribute(roofVertices, 3));
+  roofGeo.computeVertexNormals();
+  
+  const roof = new THREE.Mesh(
+    roofGeo,
+    new THREE.MeshStandardMaterial({color: roofColor, side: THREE.DoubleSide})
+  );
+  roof.position.set(x, y, z);
+  roof.castShadow = true;
+  scene.add(roof);
+  
+  // Clickable info box
+  const infoBox = new THREE.Mesh(
+    new THREE.BoxGeometry(width, height, depth),
+    new THREE.MeshBasicMaterial({visible: false})
+  );
+  infoBox.position.set(x, y + height/2, z);
+  infoBox.userData = {name: name, desc: desc};
+  scene.add(infoBox);
+  clickables.push(infoBox);
+}
+
+// Create multiple shed displays
+createShed(shedAreaX - 6, 0.1, shedAreaZ - 5, 4, 4, 3, '#8b4513', '#d2b48c', 
+  'Classic Garden Shed', 'Wooden storage shed 8x6ft. Weather-resistant. Perfect for tools and equipment. $899');
+
+createShed(shedAreaX + 6, 0.1, shedAreaZ - 5, 3.5, 3.5, 2.5, '#2f4f4f', '#708090', 
+  'Metal Storage Shed', 'Galvanized steel shed 7x5ft. Rust-proof, lockable door. Low maintenance. $649');
+
+createShed(shedAreaX - 6, 0.1, shedAreaZ + 8, 5, 4.5, 4, '#654321', '#f5deb3', 
+  'Premium Workshop Shed', 'Large 10x8ft shed with windows. Perfect for workshop or hobby space. $1,299');
+
+createShed(shedAreaX + 6, 0.1, shedAreaZ + 8, 3, 3, 2, '#556b2f', '#8fbc8f', 
+  'Compact Tool Shed', 'Small 6x4ft shed. Ideal for garden tools. Easy assembly. $449');
+
+// Add garden accessories near sheds
+product(shedAreaX - 8, 0.3, shedAreaZ + 2, 1, 0.6, 0.8, '#228b22', 'Wheelbarrow', 'Heavy-duty steel. $89', 'table');
+product(shedAreaX + 8, 0.3, shedAreaZ + 2, 0.8, 1.2, 0.5, '#8b4513', 'Garden Tools Set', 'Spade, rake, hoe. $129', 'table');
+product(shedAreaX, 0.5, shedAreaZ + 15, 2, 1, 1.5, '#6b8e23', 'Potting Bench', 'Workspace for plants. $199', 'desk');
+
+// Add info hotspot for shed area
+hotspot(shedAreaX, 2, shedAreaZ, 'Outdoor Sheds', 'Complete range of garden sheds and storage solutions. Free assembly service available. Delivery within 5-7 days.');
 const brand1=new THREE.Mesh(new THREE.PlaneGeometry(40,3),new THREE.MeshStandardMaterial({color:'#0058a3'}));
 brand1.position.set(0,8,-59.9);
 scene.add(brand1);
@@ -132,6 +389,46 @@ scene.add(brand1);
 const brand2=new THREE.Mesh(new THREE.PlaneGeometry(40,1.2),new THREE.MeshStandardMaterial({color:'#ffda1a'}));
 brand2.position.set(0,6,-59.9);
 scene.add(brand2);
+
+// IKEA Logo Text
+const logoCanvas=document.createElement('canvas');
+logoCanvas.width=1024;
+logoCanvas.height=256;
+const logoCtx=logoCanvas.getContext('2d');
+logoCtx.fillStyle='#0058a3';
+logoCtx.fillRect(0,0,1024,256);
+logoCtx.fillStyle='#ffda1a';
+logoCtx.font='bold 180px Arial';
+logoCtx.textAlign='center';
+logoCtx.fillText('IKEA',512,190);
+const logoTexture=new THREE.CanvasTexture(logoCanvas);
+const logoMesh=new THREE.Mesh(
+  new THREE.PlaneGeometry(20,5),
+  new THREE.MeshStandardMaterial({map:logoTexture})
+);
+logoMesh.position.set(0,9,-59.8);
+scene.add(logoMesh);
+
+// Welcome Sign
+const welcomeCanvas=document.createElement('canvas');
+welcomeCanvas.width=1024;
+welcomeCanvas.height=256;
+const welCtx=welcomeCanvas.getContext('2d');
+welCtx.fillStyle='#ffffff';
+welCtx.fillRect(0,0,1024,256);
+welCtx.fillStyle='#0058a3';
+welCtx.font='bold 80px Arial';
+welCtx.textAlign='center';
+welCtx.fillText('WELCOME',512,100);
+welCtx.font='50px Arial';
+welCtx.fillText('Store Hours: 10:00 AM - 9:00 PM',512,170);
+const welcomeTexture=new THREE.CanvasTexture(welcomeCanvas);
+const welcomeMesh=new THREE.Mesh(
+  new THREE.PlaneGeometry(12,3),
+  new THREE.MeshStandardMaterial({map:welcomeTexture})
+);
+welcomeMesh.position.set(-8,3,35.5);
+scene.add(welcomeMesh);
 
 // Add texture to walls (wood panel effect for showroom)
 function addTexture(mesh,color){
@@ -153,59 +450,368 @@ function addTexture(mesh,color){
   mesh.material.needsUpdate=true;
 }
 
-function createTexture(baseColor,pattern){
+function createImageTexture(type){
   const canvas=document.createElement('canvas');
-  canvas.width=canvas.height=512;
+  canvas.width=512;
+  canvas.height=512;
   const ctx=canvas.getContext('2d');
-  ctx.fillStyle=baseColor;
-  ctx.fillRect(0,0,512,512);
   
-  if(pattern==='fabric'){
-    for(let i=0;i<50;i++){
-      ctx.strokeStyle=`rgba(0,0,0,${Math.random()*0.15})`;
-      ctx.lineWidth=Math.random()*2;
+  if(type==='sofa'){
+    // Brown sofa with cushions
+    ctx.fillStyle='#8b6f47';
+    ctx.fillRect(0,0,512,512);
+    ctx.fillStyle='#6d5637';
+    ctx.fillRect(50,150,412,300);
+    // Cushions with detail
+    ctx.fillStyle='#9d8157';
+    for(let i=0;i<3;i++){
+      ctx.fillRect(70+i*140,180,120,120);
+      // Cushion borders
+      ctx.strokeStyle='#7d6647';
+      ctx.lineWidth=3;
+      ctx.strokeRect(70+i*140,180,120,120);
+    }
+    // Armrests with shading
+    ctx.fillStyle='#7d6647';
+    ctx.fillRect(30,200,80,200);
+    ctx.fillRect(402,200,80,200);
+    // Shadow details
+    ctx.fillStyle='rgba(0,0,0,0.3)';
+    ctx.fillRect(50,420,412,30);
+    // Fabric texture
+    for(let i=0;i<30;i++){
+      ctx.strokeStyle=`rgba(0,0,0,${Math.random()*0.1})`;
+      ctx.lineWidth=1;
       ctx.beginPath();
-      ctx.moveTo(Math.random()*512,0);
-      ctx.lineTo(Math.random()*512,512);
+      ctx.moveTo(Math.random()*512,150);
+      ctx.lineTo(Math.random()*512,450);
       ctx.stroke();
     }
-    for(let i=0;i<50;i++){
-      ctx.strokeStyle=`rgba(255,255,255,${Math.random()*0.1})`;
-      ctx.lineWidth=Math.random();
+  }else if(type==='bed'){
+    // Bed with headboard
+    ctx.fillStyle='#c19a6b';
+    ctx.fillRect(0,0,512,512);
+    // Decorative headboard
+    ctx.fillStyle='#b8936b';
+    ctx.fillRect(0,0,512,150);
+    ctx.strokeStyle='#8d7a5b';
+    ctx.lineWidth=4;
+    for(let i=0;i<5;i++){
+      ctx.strokeRect(20+i*96,10,86,130);
+    }
+    // Mattress
+    ctx.fillStyle='#e8e8e8';
+    ctx.fillRect(50,150,412,300);
+    // Mattress stitching
+    ctx.strokeStyle='#d0d0d0';
+    ctx.lineWidth=2;
+    for(let i=0;i<8;i++){
       ctx.beginPath();
-      ctx.moveTo(0,Math.random()*512);
-      ctx.lineTo(512,Math.random()*512);
+      ctx.moveTo(50,170+i*35);
+      ctx.lineTo(462,170+i*35);
       ctx.stroke();
     }
-  }else if(pattern==='wood'){
-    for(let i=0;i<80;i++){
-      ctx.strokeStyle=`rgba(101,67,33,${Math.random()*0.3})`;
+    // Pillows
+    ctx.fillStyle='#f5f5f5';
+    ctx.fillRect(100,160,150,80);
+    ctx.fillRect(262,160,150,80);
+    ctx.strokeStyle='#e0e0e0';
+    ctx.strokeRect(100,160,150,80);
+    ctx.strokeRect(262,160,150,80);
+    // Blanket fold
+    ctx.fillStyle='#d4a574';
+    ctx.fillRect(50,380,412,70);
+    ctx.strokeStyle='#c4956b';
+    ctx.lineWidth=3;
+    for(let i=0;i<10;i++){
+      ctx.beginPath();
+      ctx.moveTo(50+i*42,380);
+      ctx.lineTo(50+i*42,450);
+      ctx.stroke();
+    }
+  }else if(type==='table'){
+    // Coffee table top view
+    ctx.fillStyle='#654321';
+    ctx.fillRect(0,0,512,512);
+    // Wood grain details
+    ctx.strokeStyle='rgba(50,30,10,0.4)';
+    for(let i=0;i<40;i++){
       ctx.lineWidth=Math.random()*3+1;
       ctx.beginPath();
       ctx.moveTo(0,Math.random()*512);
       ctx.lineTo(512,Math.random()*512);
       ctx.stroke();
     }
-  }else if(pattern==='metal'){
-    const gradient=ctx.createLinearGradient(0,0,512,512);
-    gradient.addColorStop(0,'rgba(255,255,255,0.2)');
-    gradient.addColorStop(0.5,'rgba(0,0,0,0.1)');
-    gradient.addColorStop(1,'rgba(255,255,255,0.2)');
-    ctx.fillStyle=gradient;
-    ctx.fillRect(0,0,512,512);
-  }else if(pattern==='cardboard'){
-    for(let i=0;i<100;i++){
-      ctx.fillStyle=`rgba(139,115,85,${Math.random()*0.2})`;
-      ctx.fillRect(Math.random()*512,Math.random()*512,Math.random()*20,Math.random()*20);
+    // Wood knots
+    for(let i=0;i<5;i++){
+      ctx.fillStyle='rgba(40,25,10,0.6)';
+      ctx.beginPath();
+      ctx.arc(Math.random()*512,Math.random()*512,Math.random()*20+10,0,Math.PI*2);
+      ctx.fill();
     }
+    // Table edge with detail
+    ctx.fillStyle='#4d3621';
+    ctx.fillRect(0,0,512,40);
+    ctx.fillRect(0,472,512,40);
+    ctx.fillRect(0,0,40,512);
+    ctx.fillRect(472,0,40,512);
+    // Edge highlight
+    ctx.strokeStyle='#6d5631';
+    ctx.lineWidth=3;
+    ctx.strokeRect(40,40,432,432);
+  }else if(type==='desk'){
+    // Office desk with more detail
+    ctx.fillStyle='#34495e';
+    ctx.fillRect(0,0,512,512);
+    // Desktop surface
+    ctx.fillStyle='#3d566e';
+    ctx.fillRect(20,20,472,100);
+    // Drawer with detail
+    ctx.fillStyle='#2c3e50';
+    ctx.fillRect(50,300,150,180);
+    ctx.strokeStyle='#bdc3c7';
+    ctx.lineWidth=3;
+    ctx.strokeRect(50,300,150,180);
+    // Drawer lines
+    ctx.strokeRect(50,360,150,60);
+    ctx.strokeRect(50,420,150,60);
+    // Handles
+    ctx.fillStyle='#95a5a6';
+    ctx.fillRect(110,335,30,8);
+    ctx.fillRect(110,395,30,8);
+    ctx.fillRect(110,455,30,8);
+    // Desk legs
+    ctx.fillStyle='#2c3e50';
+    ctx.fillRect(30,120,20,392);
+    ctx.fillRect(180,120,20,392);
+    ctx.fillRect(300,120,20,392);
+    ctx.fillRect(470,120,20,392);
+  }else if(type==='chair'){
+    // Office chair with mesh detail
+    ctx.fillStyle='#2c3e50';
+    ctx.fillRect(0,0,512,512);
+    // Seat cushion
+    ctx.fillStyle='#34495e';
+    ctx.fillRect(100,250,312,200);
+    ctx.strokeStyle='#2c3e50';
+    ctx.lineWidth=3;
+    ctx.strokeRect(100,250,312,200);
+    // Cushion padding detail
+    for(let i=0;i<3;i++){
+      for(let j=0;j<3;j++){
+        ctx.strokeStyle='rgba(0,0,0,0.2)';
+        ctx.lineWidth=2;
+        ctx.strokeRect(120+i*90,270+j*60,70,40);
+      }
+    }
+    // Backrest
+    ctx.fillStyle='#2c3e50';
+    ctx.fillRect(150,50,212,250);
+    // Mesh pattern
+    ctx.strokeStyle='rgba(255,255,255,0.15)';
+    ctx.lineWidth=2;
+    for(let i=0;i<25;i++){
+      ctx.beginPath();
+      ctx.moveTo(150,50+i*10);
+      ctx.lineTo(362,50+i*10);
+      ctx.stroke();
+    }
+    for(let i=0;i<21;i++){
+      ctx.beginPath();
+      ctx.moveTo(150+i*10,50);
+      ctx.lineTo(150+i*10,300);
+      ctx.stroke();
+    }
+    // Armrests
+    ctx.fillStyle='#34495e';
+    ctx.fillRect(80,280,15,100);
+    ctx.fillRect(417,280,15,100);
+    // Base star with wheels
+    ctx.fillStyle='#2c3e50';
+    for(let i=0;i<5;i++){
+      ctx.save();
+      ctx.translate(256,480);
+      ctx.rotate((i*Math.PI*2)/5);
+      ctx.fillRect(-8,-60,16,60);
+      ctx.restore();
+    }
+  }else if(type==='wardrobe'){
+    // Wardrobe with detailed doors
+    ctx.fillStyle='#f5f5dc';
+    ctx.fillRect(0,0,512,512);
+    // Door panels with detail
+    for(let i=0;i<3;i++){
+      const x=10+i*167;
+      ctx.strokeStyle='#d3d3c3';
+      ctx.lineWidth=4;
+      ctx.strokeRect(x,10,160,492);
+      // Inner door panel
+      ctx.strokeRect(x+15,25,130,220);
+      ctx.strokeRect(x+15,260,130,220);
+    }
+    // Door handles
+    ctx.fillStyle='#888';
+    for(let i=0;i<3;i++){
+      const x=85+i*167;
+      ctx.fillRect(x,250,10,25);
+      ctx.fillRect(x-3,245,16,6);
+      ctx.fillRect(x-3,269,16,6);
+    }
+    // Wood grain
+    ctx.strokeStyle='rgba(180,180,150,0.3)';
+    for(let i=0;i<50;i++){
+      ctx.lineWidth=Math.random()*2;
+      ctx.beginPath();
+      ctx.moveTo(0,Math.random()*512);
+      ctx.lineTo(512,Math.random()*512);
+      ctx.stroke();
+    }
+  }else if(type==='kitchen'){
+    // Kitchen cabinets with detail
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,512,512);
+    // Upper cabinets
+    ctx.strokeStyle='#e0e0e0';
+    ctx.lineWidth=3;
+    for(let i=0;i<4;i++){
+      ctx.strokeRect(i*128+5,50,118,200);
+      // Cabinet panel
+      ctx.strokeRect(i*128+15,65,98,170);
+    }
+    // Lower cabinets
+    for(let i=0;i<4;i++){
+      ctx.strokeRect(i*128+5,270,118,200);
+      // Two drawers
+      ctx.strokeRect(i*128+15,285,98,80);
+      ctx.strokeRect(i*128+15,375,98,80);
+    }
+    // Handles
+    ctx.fillStyle='#c0c0c0';
+    for(let i=0;i<4;i++){
+      ctx.fillRect(i*128+100,140,5,20);
+      ctx.fillRect(i*128+100,320,5,15);
+      ctx.fillRect(i*128+100,410,5,15);
+    }
+    // Countertop
+    ctx.fillStyle='#8b8b8b';
+    ctx.fillRect(0,255,512,15);
+  }else if(type==='fridge'){
+    // Refrigerator with detail
+    ctx.fillStyle='#e5e5e5';
+    ctx.fillRect(0,0,512,512);
+    // Main door
+    ctx.strokeStyle='#c0c0c0';
+    ctx.lineWidth=4;
+    ctx.strokeRect(20,20,472,320);
+    // Freezer door
+    ctx.strokeRect(20,360,472,132);
+    // Door seals
+    ctx.strokeStyle='#a0a0a0';
+    ctx.lineWidth=6;
+    ctx.strokeRect(25,25,462,310);
+    ctx.strokeRect(25,365,462,122);
+    // Handle
+    ctx.fillStyle='#888';
+    ctx.fillRect(450,150,15,60);
+    ctx.fillRect(445,145,25,8);
+    ctx.fillRect(445,202,25,8);
+    // Brand logo area
+    ctx.fillStyle='#d0d0d0';
+    ctx.fillRect(50,50,100,30);
+    ctx.fillStyle='#888';
+    ctx.font='bold 20px Arial';
+    ctx.fillText('IKEA',55,72);
+    // Water dispenser
+    ctx.fillStyle='#b0b0b0';
+    ctx.fillRect(250,180,80,100);
+    ctx.fillRect(265,200,50,20);
+  }else if(type==='box'){
+    // Cardboard box with IKEA branding
+    ctx.fillStyle='#8b7355';
+    ctx.fillRect(0,0,512,512);
+    // Box flaps
+    ctx.strokeStyle='#6d5d4f';
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(256,0);
+    ctx.lineTo(456,100);
+    ctx.lineTo(456,412);
+    ctx.lineTo(256,512);
+    ctx.lineTo(56,412);
+    ctx.lineTo(56,100);
+    ctx.closePath();
+    ctx.stroke();
+    // Cardboard texture
+    for(let i=0;i<100;i++){
+      ctx.fillStyle=`rgba(120,100,80,${Math.random()*0.1})`;
+      ctx.fillRect(Math.random()*512,Math.random()*512,Math.random()*15,Math.random()*15);
+    }
+    // IKEA Logo
+    ctx.fillStyle='#0058a3';
+    ctx.fillRect(140,200,232,120);
+    ctx.fillStyle='#ffda1a';
+    ctx.font='bold 70px Arial';
+    ctx.fillText('IKEA',165,275);
+    // Barcode
+    ctx.fillStyle='#000';
+    for(let i=0;i<20;i++){
+      ctx.fillRect(150+i*10,350,Math.random()>0.5?4:2,40);
+    }
+    // Product code
+    ctx.fillStyle='#000';
+    ctx.font='16px Arial';
+    ctx.fillText('ART.NO: 123.456.78',170,410);
+  }else if(type==='nightstand'){
+    // Nightstand with detail
+    ctx.fillStyle='#8b7355';
+    ctx.fillRect(0,0,512,512);
+    // Top surface
+    ctx.fillStyle='#9d8467';
+    ctx.fillRect(30,50,452,30);
+    // Drawers
+    ctx.fillStyle='#7d6647';
+    ctx.fillRect(50,100,412,150);
+    ctx.fillRect(50,270,412,150);
+    ctx.strokeStyle='#6d5d4f';
+    ctx.lineWidth=3;
+    ctx.strokeRect(50,100,412,150);
+    ctx.strokeRect(50,270,412,150);
+    // Drawer panels
+    ctx.strokeRect(65,115,382,120);
+    ctx.strokeRect(65,285,382,120);
+    // Handles
+    ctx.fillStyle='#444';
+    ctx.fillRect(240,165,32,10);
+    ctx.fillRect(240,335,32,10);
+    // Handle screws
+    ctx.fillStyle='#333';
+    ctx.beginPath();
+    ctx.arc(243,170,3,0,Math.PI*2);
+    ctx.arc(269,170,3,0,Math.PI*2);
+    ctx.arc(243,340,3,0,Math.PI*2);
+    ctx.arc(269,340,3,0,Math.PI*2);
+    ctx.fill();
+    // Wood grain
+    ctx.strokeStyle='rgba(100,80,60,0.3)';
+    for(let i=0;i<60;i++){
+      ctx.lineWidth=Math.random()*2;
+      ctx.beginPath();
+      ctx.moveTo(0,Math.random()*512);
+      ctx.lineTo(512,Math.random()*512);
+      ctx.stroke();
+    }
+    // Legs
+    ctx.fillStyle='#6d5d4f';
+    ctx.fillRect(60,440,15,72);
+    ctx.fillRect(437,440,15,72);
   }
   
   return new THREE.CanvasTexture(canvas);
 }
 
-function product(x,y,z,w,h,d,col,name,desc,pattern){
-  const texture=pattern?createTexture(col,pattern):null;
-  const mat=texture?new THREE.MeshStandardMaterial({map:texture,roughness:0.7}):new THREE.MeshStandardMaterial({color:col,roughness:0.7});
+function product(x,y,z,w,h,d,col,name,desc,imgType){
+  const texture=imgType?createImageTexture(imgType):null;
+  const mat=texture?new THREE.MeshStandardMaterial({map:texture,roughness:0.6}):new THREE.MeshStandardMaterial({color:col,roughness:0.7});
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
   m.position.set(x,y,z);
   m.castShadow=m.receiveShadow=true;
@@ -219,14 +825,57 @@ function product(x,y,z,w,h,d,col,name,desc,pattern){
 const entSign=wall(8,2,0.3,0,3,35,'#0058a3');
 entSign.userData={name:'Store Entrance',desc:'Main entry with info desk. 15,000+ weekly visitors. Store maps and member services available.'};
 clickables.push(entSign);
-product(-8,0.5,38,3,1,2,'#8b4513','Reception Desk','Customer service & information','wood');
+
+// Entry/Exit Signs
+const entryCanvas=document.createElement('canvas');
+entryCanvas.width=512;
+entryCanvas.height=256;
+const entryCtx=entryCanvas.getContext('2d');
+entryCtx.fillStyle='#0058a3';
+entryCtx.fillRect(0,0,512,256);
+entryCtx.fillStyle='#ffffff';
+entryCtx.font='bold 80px Arial';
+entryCtx.textAlign='center';
+entryCtx.fillText('ENTRANCE',256,100);
+entryCtx.font='40px Arial';
+entryCtx.fillText('→',256,170);
+const entryTexture=new THREE.CanvasTexture(entryCanvas);
+const entrySign=new THREE.Mesh(
+  new THREE.PlaneGeometry(6,3),
+  new THREE.MeshStandardMaterial({map:entryTexture})
+);
+entrySign.position.set(-10,4,36);
+scene.add(entrySign);
+
+const exitCanvas=document.createElement('canvas');
+exitCanvas.width=512;
+exitCanvas.height=256;
+const exitCtx=exitCanvas.getContext('2d');
+exitCtx.fillStyle='#d32f2f';
+exitCtx.fillRect(0,0,512,256);
+exitCtx.fillStyle='#ffffff';
+exitCtx.font='bold 80px Arial';
+exitCtx.textAlign='center';
+exitCtx.fillText('EXIT',256,100);
+exitCtx.font='40px Arial';
+exitCtx.fillText('←',256,170);
+const exitTexture=new THREE.CanvasTexture(exitCanvas);
+const exitSign=new THREE.Mesh(
+  new THREE.PlaneGeometry(6,3),
+  new THREE.MeshStandardMaterial({map:exitTexture})
+);
+exitSign.position.set(10,4,58);
+exitSign.rotation.y=Math.PI;
+scene.add(exitSign);
+
+product(-8,0.5,38,3,1,2,'#8b4513','Reception Desk','Customer service & information','desk');
 
 // Living Room Showroom
 for(let i=0;i<3;i++){
   const x=-25+i*10;
-  product(x,0.5,0,4,1,2.5,'#8b6f47','Sofa Set '+(i+1),'3-seat sofa $699-$1299','fabric');
-  product(x-2,0.3,3,1.5,0.6,1.5,'#654321','Coffee Table','Wood $149','wood');
-  product(x+3,1.2,0,0.8,2.5,0.5,'#2c3e50','TV Stand','$199','wood');
+  product(x,0.5,0,4,1,2.5,'#8b6f47','Sofa Set '+(i+1),'3-seat sofa $699-$1299','sofa');
+  product(x-2,0.3,3,1.5,0.6,1.5,'#654321','Coffee Table','Wood $149','table');
+  product(x+3,1.2,0,0.8,2.5,0.5,'#2c3e50','TV Stand','$199','table');
 }
 
 const livSign=wall(6,1.5,0.2,-20,4,-10,'#3498db');
@@ -236,9 +885,9 @@ clickables.push(livSign);
 // Bedroom
 for(let i=0;i<2;i++){
   const x=15+i*12;
-  product(x,1,5,4,2,5,'#c19a6b','Bed Frame '+(i+1),'Queen with storage $399','wood');
-  product(x+4,0.8,5,1.5,1.8,1.2,'#8b7355','Nightstand','2-drawer $79','wood');
-  product(x-4,2,5,2,4,1.5,'#f5f5dc','Wardrobe','3-door $599','wood');
+  product(x,1,5,4,2,5,'#c19a6b','Bed Frame '+(i+1),'Queen with storage $399','bed');
+  product(x+4,0.8,5,1.5,1.8,1.2,'#8b7355','Nightstand','2-drawer $79','nightstand');
+  product(x-4,2,5,2,4,1.5,'#f5f5dc','Wardrobe','3-door $599','wardrobe');
 }
 
 const bedSign=wall(6,1.5,0.2,20,4,-5,'#3498db');
@@ -246,8 +895,8 @@ bedSign.userData={name:'Bedroom',desc:'Complete bedroom solutions. Mattress test
 clickables.push(bedSign);
 
 // Kitchen
-product(-20,0.5,25,8,1,3,'#ffffff','Kitchen Unit','Complete kitchen $1,299','metal');
-product(-20,1.5,22,2,3,2,'#e5e5e5','Refrigerator','$499','metal');
+product(-20,0.5,25,8,1,3,'#ffffff','Kitchen Unit','Complete kitchen $1,299','kitchen');
+product(-20,1.5,22,2,3,2,'#e5e5e5','Refrigerator','$499','fridge');
 
 const kitSign=wall(6,1.5,0.2,-20,4,15,'#3498db');
 kitSign.userData={name:'Kitchen',desc:'Modular systems. Free 3D design service. Planning appointments available.'};
@@ -256,8 +905,8 @@ clickables.push(kitSign);
 // Office
 for(let i=0;i<3;i++){
   const x=12+i*8;
-  product(x,0.8,25,3.5,1.6,2,'#34495e','Desk '+(i+1),'Height adjustable $299','wood');
-  product(x,1.8,27,1.2,2.2,1.2,'#2c3e50','Office Chair','Ergonomic $249','fabric');
+  product(x,0.8,25,3.5,1.6,2,'#34495e','Desk '+(i+1),'Height adjustable $299','desk');
+  product(x,1.8,27,1.2,2.2,1.2,'#2c3e50','Office Chair','Ergonomic $249','chair');
 }
 
 const offSign=wall(6,1.5,0.2,20,4,15,'#3498db');
@@ -267,7 +916,7 @@ clickables.push(offSign);
 // Marketplace
 for(let x=-15;x<20;x+=8){
   for(let z=42;z<50;z+=4){
-    product(x,0.5,z,3,1,2,'#f0f0f0','Display','Accessories & textiles','fabric');
+    product(x,0.5,z,3,1,2,'#f0f0f0','Display','Accessories & textiles','table');
   }
 }
 
@@ -278,7 +927,7 @@ clickables.push(markSign);
 // Warehouse
 for(let x=35;x<55;x+=5){
   for(let z=43;z<52;z+=4){
-    product(x,2,z,3,4,3,'#8b7355','Stock','Flat-pack furniture','cardboard');
+    product(x,2,z,3,4,3,'#8b7355','Stock','Flat-pack furniture','box');
   }
 }
 
@@ -288,7 +937,7 @@ clickables.push(wareSign);
 
 // Checkout
 for(let i=0;i<5;i++){
-  product(-12+i*6,0.6,54,2.5,1.2,1,'#0058a3','Checkout '+(i+1),'Card/cash/mobile pay','metal');
+  product(-12+i*6,0.6,54,2.5,1.2,1,'#0058a3','Checkout '+(i+1),'Card/cash/mobile pay','desk');
 }
 
 const checkSign=wall(8,1.5,0.2,0,4,50,'#3498db');
